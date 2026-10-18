@@ -87,7 +87,7 @@ input[type=text],input[type=number],input[type=date],input[type=datetime-local],
 
 <script>
 // ============ CONFIG: edit these two lines before publishing ============
-var APP_VERSION='v1 · 2026-10-16';
+var APP_VERSION='v2 · 2026-10-17';
 var CONFIG={owner:'thomisrad',repo:'CatFam',branch:'data'}; // the PRIVATE data repo. Never put a token here.
 // ========================================================================
 // ===== CATFAM CORE BEGIN =====
@@ -489,7 +489,7 @@ function render(){
   if(S.catsMissing)h+='<div class="banner warn">cats.json was not found on the data branch, so placeholder names are shown. Add cats.json to set real names.</div>';
   else if(S.lastRead&&Date.now()-S.lastRead>15*60000)h+='<div class="banner warn">Showing data from '+esc(ago(new Date(S.lastRead).toISOString()))+'.</div>';
   if(!GH_CFG.token)h+='<div class="banner warn">No token on this phone yet, so entries are saved here and will not sync. Tap ⚙️ to add it.</div>';
-  if(CONFIG.owner==='thomisrad')h+='<div class="banner bad">This copy is not configured: edit CONFIG.owner at the top of the file.</div>';
+  if(CONFIG.owner.slice(0,5)==='YOUR-')h+='<div class="banner bad">This copy is not configured: edit CONFIG.owner at the top of the file.</div>';
   h+='<h2>Cats</h2><div class="cats">';
   S.cats.forEach(function(c){
     var f=lastOf(mg.list,c.id,'feeding'),l=lastOf(mg.list,c.id,'litter'),w=lastOf(mg.list,c.id,'weight');
