@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src https://api.github.com; img-src data:; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#2f6f5e">
+<title>CatFam Log</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%B1%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1f2a27;--mute:#66726e;--line:#e0dcd2;--brand:#2f6f5e;--brand-ink:#fff;
+  --ok:#1f7a45;--amber:#a15c00;--red:#b3261e;--chip:#ece8dd;--shadow:0 1px 3px rgba(0,0,0,.12)}
+@media (prefers-color-scheme:dark){:root{--bg:#141a18;--card:#1e2724;--ink:#eef2f0;--mute:#9aa8a3;--line:#2f3b37;--brand:#5fb59d;--brand-ink:#0d1714;
+  --ok:#5fcf8f;--amber:#f0b25a;--red:#ff8a80;--chip:#2a3531;--shadow:none}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding:0 16px calc(96px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 0 10px}
+header h1{font-size:20px;margin:0;flex:1}
+header small{display:block;font-weight:400;font-size:11px;color:var(--mute)}
+.pill{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 12px;font-size:13px;font-weight:600;min-height:40px}
+.pill.ok{color:var(--ok)}.pill.warn{color:var(--amber)}.pill.bad{color:var(--red)}
+.gear{border:0;background:transparent;font-size:22px;min-width:44px;min-height:44px;color:var(--ink)}
+h2{font-size:15px;margin:22px 0 8px;color:var(--mute);text-transform:uppercase;letter-spacing:.04em}
+.card{background:var(--card);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow);border:1px solid var(--line);margin-bottom:10px}
+.cats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cats .card{margin:0}
+.cats h3{margin:0 0 6px;font-size:17px}
+.stat{display:flex;justify-content:space-between;font-size:14px;padding:2px 0}
+.stat span{color:var(--mute)}
+.amber{color:var(--amber);font-weight:600}.red{color:var(--red);font-weight:700}.fine{color:var(--ok)}
+.tiles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;min-height:92px;font-size:14px;font-weight:600;color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:var(--shadow)}
+.tile i{font-style:normal;font-size:30px}
+.tile:active{transform:scale(.97)}
+ul{list-style:none;margin:0;padding:0}
+li.rec{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+li.rec:last-child{border:0}
+li.rec .t{color:var(--mute);min-width:58px}
+li.rec .b{flex:1}
+li.rec .by{color:var(--mute);font-size:12px}
+.badge{font-size:12px;white-space:nowrap}
+.badge.wait{color:var(--amber)}.badge.ok{color:var(--ok)}
+.empty{color:var(--mute);font-size:14px;padding:6px 0}
+.banner{border-radius:12px;padding:10px 12px;font-size:14px;margin:6px 0 10px;border:1px solid var(--line);background:var(--card)}
+.banner.warn{border-color:var(--amber);color:var(--amber)}.banner.bad{border-color:var(--red);color:var(--red)}
+.veil{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:20}
+.veil.on{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:92vh;overflow:auto;background:var(--card);border-radius:20px 20px 0 0;
+  padding:10px 16px calc(18px + env(safe-area-inset-bottom));z-index:21;display:none;box-shadow:0 -4px 20px rgba(0,0,0,.25)}
+.sheet.on{display:block}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 10px}
+.sheet h2{font-size:20px;margin:4px 0 10px;color:var(--ink);text-transform:none;letter-spacing:0}
+.lbl{display:block;font-size:13px;font-weight:600;color:var(--mute);margin:12px 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label{position:relative}
+.chips input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0}
+.chips span,.chips button{display:inline-block;background:var(--chip);border:2px solid transparent;border-radius:999px;padding:10px 16px;min-height:44px;font-size:15px;color:var(--ink);font-weight:500}
+.chips input:checked+span,.chips button.on{border-color:var(--brand);background:var(--card);font-weight:700}
+.chips input:focus-visible+span{outline:2px solid var(--brand);outline-offset:2px}
+input[type=text],input[type=number],input[type=date],input[type=datetime-local],input[type=password],textarea{width:100%;font:inherit;font-size:16px;
+  padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:10px;margin-top:16px}
+.btn{flex:1;min-height:50px;border-radius:12px;border:0;background:var(--brand);color:var(--brand-ink);font-size:17px;font-weight:700}
+.btn.ghost{background:var(--chip);color:var(--ink)}
+.btn[disabled]{opacity:.55}
+.err{color:var(--red);font-size:14px;min-height:20px;margin-top:8px}
+.hint{font-size:13px;color:var(--mute);margin:6px 0}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));background:#1f2a27;color:#fff;border-radius:12px;padding:12px 14px;
+  font-size:15px;z-index:30;display:none;box-shadow:0 4px 16px rgba(0,0,0,.35)}
+#toast.on{display:block}
+#toast.warn{background:#7a4a00}
+</style>
+</head>
+<body>
+<header>
+  <h1>🐱 CatFam <small id="ver"></small></h1>
+  <button class="pill" id="status" type="button" aria-live="polite">…</button>
+  <button class="gear" id="gear" type="button" aria-label="Settings">⚙️</button>
+</header>
+<main id="main"></main>
+<div class="veil" id="veil"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// ============ CONFIG: edit these two lines before publishing ============
+var APP_VERSION='v1 · 2026-10-16';
+var CONFIG={owner:'thomisrad',repo:'CatFam',branch:'data'}; // the PRIVATE data repo. Never put a token here.
+// ========================================================================
+// ===== CATFAM CORE BEGIN =====
+// One write rule: fetch the CURRENT remote file, apply a small ID-based change to that fresh copy,
+// PUT with the SHA from that same fetch. Local copies are never a write base.
+var GH_CFG={owner:'',repo:'',branch:'data',token:'',readMs:5000,rawMs:12000,writeMs:20000};
+var CF={outboxKey:'catfam_outbox',cacheKey:'catfam_cache',tokenKey:'catfam_token',
+  catsPath:'cats.json',deletedPath:'deleted.json',retryMs:45000};
+var LOCAL_KEYS=['synced','pending']; // UI state: never written to the data files
+
+// ---------- small helpers ----------
+function b64ToUtf8(b){
+  var bin=atob(String(b).replace(/\s/g,''));
+  var bytes=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  return new TextDecoder('utf-8').decode(bytes);
+}
+function utf8ToB64(s){return btoa(unescape(encodeURIComponent(s)));}
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});
+}
+function stripLocal(e){
+  if(e===null||typeof e!=='object'||Array.isArray(e))return e; // plain values (e.g. deleted.json IDs) pass through untouched
+  var c={};for(var k in e){if(LOCAL_KEYS.indexOf(k)<0)c[k]=e[k];}return c;
+}
+function keyOf(x){return (x&&typeof x==='object'&&x.id!=null)?'id:'+x.id:'v:'+JSON.stringify(x);}
+function newId(){
+  var a=new Uint8Array(8),s='';crypto.getRandomValues(a);
+  for(var i=0;i<a.length;i++)s+=(a[i]%36).toString(36);
+  return 'r'+Date.now().toString(36)+s;
+}
+// Records live in one file per UTC month, chosen by the record's ts
+function monthOf(ts){var m=/^(\d{4})-(\d{2})-\d{2}T/.exec(String(ts));return m?m[1]+'-'+m[2]:null;}
+function monthPath(m){return 'records-'+m+'.json';}
+function lastMonths(n,now){
+  var d=now?new Date(now):new Date(),y=d.getUTCFullYear(),m=d.getUTCMonth(),out=[];
+  for(var i=0;i<n;i++){
+    var mm=m-i,yy=y;while(mm<0){mm+=12;yy--;}
+    out.push(yy+'-'+((mm+1)<10?'0':'')+(mm+1));
+  }
+  return out;
+}
+
+// ---------- record schema ----------
+var REC_TYPES={feeding:1,litter:1,weight:1,medication:1,vet:1,behavior:1};
+function validateRecord(r,catIds){
+  var e=[];
+  if(!r||typeof r!=='object')return['record'];
+  function has(v){return v!=null&&String(v).trim()!=='';}
+  function isNum(v,lo,hi){return typeof v==='number'&&isFinite(v)&&v>=lo&&v<=hi;}
+  if(!has(r.id)||typeof r.id!=='string')e.push('id');
+  if(!REC_TYPES[r.type])e.push('type');
+  if(catIds&&catIds.indexOf(r.cat)<0)e.push('cat');else if(!has(r.cat))e.push('cat');
+  if(!monthOf(r.ts)||isNaN(Date.parse(r.ts)))e.push('ts');
+  if(!has(r.by))e.push('by');
+  if(r.note!=null&&String(r.note).length>1000)e.push('note');
+  switch(r.type){
+    case 'feeding':
+      if(['wet','dry','treat','other'].indexOf(r.food)<0)e.push('food');
+      if(r.amount!=null&&!isNum(r.amount,1,500))e.push('amount');
+      break;
+    case 'litter':
+      if(['scooped','full change'].indexOf(r.action)<0)e.push('action');
+      if(r.observation!=null&&['normal','concern'].indexOf(r.observation)<0)e.push('observation');
+      break;
+    case 'weight':
+      if(!isNum(r.kg,0.5,15)||Math.abs(r.kg*10-Math.round(r.kg*10))>1e-9)e.push('kg');
+      break;
+    case 'medication':
+      if(!has(r.med))e.push('med');
+      if(r.dose!=null&&String(r.dose).length>100)e.push('dose');
+      break;
+    case 'vet':
+      if(!has(r.reason))e.push('reason');
+      if(r.nextDue!=null&&!/^\d{4}-\d{2}-\d{2}$/.test(r.nextDue))e.push('nextDue');
+      break;
+    case 'behavior':
+      if(['play','behavior','health concern'].indexOf(r.kind)<0)e.push('kind');
+      if(!has(r.note))e.push('note');
+      break;
+  }
+  return e;
+}
+
+// ---------- GitHub Contents API ----------
+function ghUrl(path,withRef){
+  return 'https://api.github.com/repos/'+GH_CFG.owner+'/'+GH_CFG.repo+'/contents/'+path+
+    (withRef?'?ref='+encodeURIComponent(GH_CFG.branch):'');
+}
+function ghHdr(accept,json){
+  var h={'Authorization':'token '+GH_CFG.token,'Accept':accept||'application/vnd.github.v3+json'};
+  if(json)h['Content-Type']='application/json';
+  return h;
+}
+// One timer covers the whole request INCLUDING reading the body (a stalled body hangs forever otherwise)
+async function ghRequest(url,opts,ms){
+  var c=new AbortController();
+  var t=setTimeout(function(){c.abort();},ms);
+  try{
+    var r=await fetch(url,Object.assign({cache:'no-store',signal:c.signal},opts));
+    var text=await r.text();
+    return{status:r.status,ok:r.ok,text:text};
+  }finally{clearTimeout(t);}
+}
+function failFor(status){
+  if(status===401)return{ok:false,reason:'auth',status:401};
+  if(status===403)return{ok:false,reason:'forbidden',status:403};
+  return{ok:false,reason:'http',status:status};
+}
+// GitHub answers 404 for a private repo the token cannot see, so a 404 on a file is only
+// "file does not exist yet" if the data branch itself is reachable.
+var _branchOk=false;
+async function ghBranchOk(){
+  if(_branchOk)return{ok:true};
+  var r=await ghRequest('https://api.github.com/repos/'+GH_CFG.owner+'/'+GH_CFG.repo+'/branches/'+
+    encodeURIComponent(GH_CFG.branch),{headers:ghHdr()},GH_CFG.readMs);
+  if(r.ok){_branchOk=true;return{ok:true};}
+  return failFor(r.status);
+}
+async function ghFetchRemote(path){
+  try{
+    var r=await ghRequest(ghUrl(path,true),{headers:ghHdr()},GH_CFG.readMs);
+    if(r.status===404){
+      var b=await ghBranchOk();
+      if(!b.ok)return b;
+      return{ok:true,list:[],sha:null,size:0,missing:true};
+    }
+    if(!r.ok)return failFor(r.status);
+    var j,text,list;
+    try{j=JSON.parse(r.text);}catch(e){return{ok:false,reason:'format'};}
+    if(j.content&&j.encoding!=='none'){
+      text=b64ToUtf8(j.content);
+    }else if(j.size>0){
+      // Contents API returns EMPTY content for files over 1 MB: fetch the raw body instead
+      var rr=await ghRequest(ghUrl(path,true),{headers:ghHdr('application/vnd.github.raw+json')},GH_CFG.rawMs);
+      if(!rr.ok)return failFor(rr.status);
+      text=rr.text;
+    }else{text='[]';}
+    try{list=JSON.parse(text);}catch(e){return{ok:false,reason:'format'};}
+    if(!Array.isArray(list))return{ok:false,reason:'format'};
+    if(j.size>10&&list.length===0)return{ok:false,reason:'format'}; // never trust an "empty" read of a non-empty file
+    return{ok:true,list:list,sha:j.sha,size:j.size};
+  }catch(e){return{ok:false,reason:'network',error:String(e)};}
+}
+async function ghPut(path,list,sha,message){
+  try{
+    // compact JSON (no indentation): about 35-40% smaller
+    var body={message:message,content:utf8ToB64(JSON.stringify(list.map(stripLocal))),branch:GH_CFG.branch};
+    if(sha)body.sha=sha;
+    var w=await ghRequest(ghUrl(path,false),{method:'PUT',headers:ghHdr(null,true),body:JSON.stringify(body)},GH_CFG.writeMs);
+    if(w.ok)return{ok:true};
+    return{ok:false,status:w.status};
+  }catch(e){return{ok:false,error:String(e)};} // outcome unknown: caller re-checks by ID on next attempt
+}
+// mutator(remoteList) -> null (nothing to change) or {list, added, removed}
+async function ghMutate(path,mutator,message){
+  for(var attempt=0;attempt<3;attempt++){
+    var rem=await ghFetchRemote(path);
+    if(!rem.ok)return{ok:false,reason:rem.reason,status:rem.status};
+    var plan=mutator(rem.list);
+    if(!plan)return{ok:true,changed:false,list:rem.list};
+    // Safety guard: the write may only add/remove exactly what the mutator says it does
+    if(!Array.isArray(plan.list))return{ok:false,reason:'guard'};
+    var i,keepKeys=new Set(plan.list.map(keyOf)),remKeys=new Set(rem.list.map(keyOf)),lost=0,added=0;
+    for(i=0;i<rem.list.length;i++){if(!keepKeys.has(keyOf(rem.list[i])))lost++;}
+    for(i=0;i<plan.list.length;i++){if(!remKeys.has(keyOf(plan.list[i])))added++;}
+    if(lost!==(plan.removed||0)||added!==(plan.added||0)||
+       plan.list.length!==rem.list.length-lost+added)return{ok:false,reason:'guard'};
+    var w=await ghPut(path,plan.list,rem.sha,message);
+    if(w.ok)return{ok:true,changed:true,list:plan.list};
+    if(w.status===409||w.status===422)continue; // someone wrote first: re-fetch, re-apply, retry
+    if(w.status)return Object.assign(failFor(w.status),{});
+    return{ok:false,reason:'network'};
+  }
+  return{ok:false,reason:'conflict'};
+}
+function ghReasonText(res){
+  switch(res&&res.reason){
+    case 'auth':return 'Token rejected (401). Replace the token.';
+    case 'forbidden':return 'GitHub refused the request (403): the token lacks permission, or the rate limit was hit.';
+    case 'http':return res.status===404
+      ?'Data repository or data branch not found, or the token cannot access it (404).'
+      :'GitHub error '+res.status+'.';
+    case 'network':return 'No signal, or the request timed out.';
+    case 'conflict':return 'Another device wrote at the same moment. Will retry.';
+    case 'guard':return 'Safety check blocked the write. Nothing was changed.';
+    case 'format':return 'The data file looks wrong or unreadable. Nothing was written.';
+    case 'notoken':return 'No token set on this device.';
+    default:return 'Unknown problem.';
+  }
+}
+
+// ---------- token (clearing it never touches queued records) ----------
+function tokenLoad(){try{return localStorage.getItem(CF.tokenKey)||'';}catch(e){return '';}}
+function tokenSave(t){try{localStorage.setItem(CF.tokenKey,t);GH_CFG.token=t;return true;}catch(e){GH_CFG.token=t;return false;}}
+function tokenClear(){try{localStorage.removeItem(CF.tokenKey);}catch(e){}GH_CFG.token='';}
+
+// ---------- outbox: own localStorage key, separate from the display cache ----------
+// localStorage is the single source of truth, so a page reload restores it with no extra step.
+var _mem=null; // only used if localStorage refuses a write; the UI must then warn "NOT saved on this device"
+function outboxLoad(){
+  if(_mem)return _mem.slice();
+  var raw=null;
+  try{raw=localStorage.getItem(CF.outboxKey);}catch(e){return [];}
+  if(raw==null||raw==='')return [];
+  try{var v=JSON.parse(raw);if(Array.isArray(v))return v;}catch(e){}
+  // corrupt: keep a copy instead of silently overwriting it
+  try{localStorage.setItem(CF.outboxKey+'_corrupt_'+Date.now(),raw);localStorage.removeItem(CF.outboxKey);}catch(e){}
+  return [];
+}
+function outboxSave(list){
+  try{localStorage.setItem(CF.outboxKey,JSON.stringify(list));_mem=null;return true;}
+  catch(e){_mem=list.slice();return false;}
+}
+function outboxRemove(id){ // deleting an entry that exists only on this device is local-only
+  var b=outboxLoad(),n=b.filter(function(e){return e.id!==id;});
+  if(n.length!==b.length)outboxSave(n);
+  return b.length-n.length;
+}
+function cacheSave(list){try{localStorage.setItem(CF.cacheKey,JSON.stringify(list));return true;}catch(e){return false;}}
+function cacheLoad(){try{var v=JSON.parse(localStorage.getItem(CF.cacheKey)||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
+
+// ---------- sync ----------
+// One batched write per month file; whole outbox in as few PUTs as possible.
+async function doSync(){
+  var box=outboxLoad();
+  if(!box.length)return{ok:true,synced:0,pending:0};
+  if(!GH_CFG.token)return{ok:false,reason:'notoken',pending:box.length};
+  var del=await ghFetchRemote(CF.deletedPath);
+  if(!del.ok)return{ok:false,reason:del.reason,status:del.status,pending:box.length};
+  var dead=new Set(del.list),confirmed=new Set(),groups={},fail=null,seen={};
+  box.forEach(function(e){
+    if(seen[e.id])return;seen[e.id]=1;
+    if(dead.has(e.id)){confirmed.add(e.id);return;}   // deleted by the admin: drop, never resurrect
+    var m=monthOf(e.ts);
+    if(!m){confirmed.add(e.id);return;}                // unusable record: cannot ever sync
+    (groups[m]=groups[m]||[]).push(e);
+  });
+  var months=Object.keys(groups).sort();
+  for(var k=0;k<months.length;k++){
+    var m=months[k],entries=groups[m];
+    var res=await ghMutate(monthPath(m),function(list){
+      var have=new Set(list.map(function(r){return r.id;}));
+      var add=entries.filter(function(e){return !have.has(e.id);}).map(stripLocal);
+      if(!add.length)return null; // already on the server (e.g. reply was lost): just clear from outbox
+      return{list:list.concat(add),added:add.length,removed:0};
+    },'CatFam: add records ('+m+')');
+    if(res.ok)entries.forEach(function(e){confirmed.add(e.id);});
+    else if(!fail)fail=res;
+  }
+  // re-read the outbox: records may have been added while we were syncing
+  var left=outboxLoad().filter(function(e){return !confirmed.has(e.id);});
+  outboxSave(left);
+  if(fail)return{ok:false,reason:fail.reason,status:fail.status,pending:left.length};
+  return{ok:true,synced:confirmed.size,pending:left.length};
+}
+var _syncP=null,_syncAgain=false;
+function syncOutbox(){ // single-flight: callers during a sync join it, and a follow-up pass picks up new records
+  if(_syncP){_syncAgain=true;return _syncP;}
+  _syncP=(async function(){
+    var res;
+    do{_syncAgain=false;res=await doSync();}while(_syncAgain&&res.ok);
+    return res;
+  })().finally(function(){_syncP=null;});
+  return _syncP;
+}
+// Save never blocks on the network: persist first, then try to sync.
+async function submitEntries(entries){
+  var box=outboxLoad(),have=new Set(box.map(function(e){return e.id;})),fresh=[],ids=new Set();
+  entries.forEach(function(e){ids.add(e.id);if(!have.has(e.id)){have.add(e.id);fresh.push(stripLocal(e));}});
+  var persisted=fresh.length?outboxSave(box.concat(fresh)):true; // double-taps with the same id add nothing
+  var res=await syncOutbox();
+  var still=outboxLoad().filter(function(e){return ids.has(e.id);}).length;
+  return{persisted:persisted,synced:still===0,pending:outboxLoad().length,result:res};
+}
+function installRetryTriggers(win,doc,onSync){
+  onSync=onSync||syncOutbox;
+  var cb=function(){if(outboxLoad().length)onSync();};
+  win.addEventListener('online',cb);
+  doc.addEventListener('visibilitychange',function(){if(doc.visibilityState==='visible')cb();});
+  return setInterval(cb,CF.retryMs); // keep trying while anything is queued
+}
+
+// ---------- reads and deletes (dashboard) ----------
+async function loadRecords(nMonths,now){
+  var months=lastMonths(nMonths,now);
+  var parts=await Promise.all([ghFetchRemote(CF.deletedPath)].concat(months.map(function(m){return ghFetchRemote(monthPath(m));})));
+  for(var i=0;i<parts.length;i++){if(!parts[i].ok)return{ok:false,reason:parts[i].reason,status:parts[i].status};}
+  var dead=new Set(parts[0].list),all=[],sizes={};
+  months.forEach(function(m,j){
+    var p=parts[j+1];sizes[m]=p.size||0;
+    p.list.forEach(function(r){if(!dead.has(r.id))all.push(r);});
+  });
+  all.sort(function(a,b){return a.ts<b.ts?-1:a.ts>b.ts?1:0;});
+  return{ok:true,list:all,sizes:sizes};
+}
+// Tombstone first (so a phone with this record still queued cannot resurrect it), then remove by ID.
+async function deleteRecord(id,month){
+  var t=await ghMutate(CF.deletedPath,function(list){
+    if(list.indexOf(id)>=0)return null;
+    return{list:list.concat([id]),added:1,removed:0};
+  },'CatFam: delete '+id);
+  if(!t.ok)return t;
+  var dupe=false;
+  var d=await ghMutate(monthPath(month),function(list){
+    var out=list.filter(function(r){return r.id!==id;}),n=list.length-out.length;
+    if(n===0)return null;                 // already gone
+    if(n>1){dupe=true;return null;}       // must remove exactly one record
+    return{list:out,added:0,removed:1};
+  },'CatFam: delete record');
+  if(dupe)return{ok:false,reason:'guard'};
+  return d;
+}
+// ===== CATFAM CORE END =====
+GH_CFG.owner=CONFIG.owner;GH_CFG.repo=CONFIG.repo;GH_CFG.branch=CONFIG.branch;
+GH_CFG.token=tokenLoad();
+
+var WHO_KEY='catfam_who',CATS_KEY='catfam_cats';
+var DEFAULT_CATS=[{id:'cat1',name:'Cat 1',meds:[]},{id:'cat2',name:'Cat 2',meds:[]}];
+var TYPES={
+  feeding:{label:'Feeding',icon:'🍽️',multi:true,all:true},
+  litter:{label:'Litter',icon:'🧹',multi:true,all:true},
+  weight:{label:'Weight',icon:'⚖️',multi:false},
+  medication:{label:'Meds',icon:'💊',multi:false},
+  vet:{label:'Vet visit',icon:'🩺',multi:true},
+  behavior:{label:'Play / note',icon:'📝',multi:true}
+};
+var FIELD_LABEL={cat:'Which cat',ts:'When',by:'Your name',food:'Food',amount:'Amount (1–500 g)',action:'Action',observation:'Observation',
+  kg:'Weight (0.5–15 kg, one decimal, e.g. 4.3)',med:'Medication',dose:'Dose (max 100 characters)',reason:'Reason',nextDue:'Next due date',kind:'Kind',note:'Note'};
+
+var S={who:'',cats:[],records:[],readErr:null,lastRead:0,reading:false,sheet:null};
+
+function $(id){return document.getElementById(id);}
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){return false;}}
+function pad(n){return (n<10?'0':'')+n;}
+function localInputValue(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());}
+function catName(id){for(var i=0;i<S.cats.length;i++)if(S.cats[i].id===id)return S.cats[i].name;return id;}
+function ago(ts){
+  var m=Math.round((Date.now()-Date.parse(ts))/60000);
+  if(isNaN(m))return '—';if(m<2)return 'just now';if(m<60)return m+' min ago';
+  var h=Math.floor(m/60);if(h<48)return h+' h ago';return Math.floor(h/24)+' d ago';
+}
+function clock(ts){
+  var d=new Date(ts);return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+}
+function sameLocalDay(ts){var a=new Date(ts),b=new Date();return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+
+// ---------- merged view: server records + this phone's unsynced outbox ----------
+function merged(){
+  var box=outboxLoad(),pend={},map={},i;
+  for(i=0;i<S.records.length;i++)map[S.records[i].id]=S.records[i];
+  for(i=0;i<box.length;i++){map[box[i].id]=box[i];pend[box[i].id]=1;}
+  var list=Object.keys(map).map(function(k){return map[k];});
+  list.sort(function(a,b){return a.ts<b.ts?1:a.ts>b.ts?-1:0;}); // newest first
+  return{list:list,pend:pend,pendingCount:box.length};
+}
+function lastOf(list,cat,type){for(var i=0;i<list.length;i++)if(list[i].cat===cat&&list[i].type===type)return list[i];return null;}
+function thr(cat,key,def){var t=cat.thresholds;return(t&&typeof t[key]==='number')?t[key]:def;}
+function hoursSince(ts){return(Date.now()-Date.parse(ts))/3600000;}
+function sevClass(h,amber,red){return h>=red?'red':h>=amber?'amber':'fine';}
+
+function summary(r){
+  switch(r.type){
+    case 'feeding':return 'Fed '+esc(r.food)+(r.amount!=null?' · '+esc(r.amount)+' g':'');
+    case 'litter':return 'Litter '+esc(r.action)+(r.observation==='concern'?' · ⚠ concern':'');
+    case 'weight':return 'Weight '+esc(r.kg)+' kg';
+    case 'medication':return esc(r.med)+(r.dose?' · '+esc(r.dose):'');
+    case 'vet':return 'Vet: '+esc(r.reason);
+    case 'behavior':return esc(r.kind);
+    default:return esc(r.type);
+  }
+}
+
+// ---------- rendering ----------
+function statusInfo(){
+  var n=outboxLoad().length;
+  if(!S.who)return{cls:'warn',text:'Set up'};
+  if(!GH_CFG.token)return{cls:'warn',text:n?n+' waiting · add token':'Add token'};
+  if(n)return{cls:'warn',text:n+' waiting'+(navigator.onLine===false?' · offline':'')};
+  if(navigator.onLine===false)return{cls:'warn',text:'Offline'};
+  if(S.readErr)return{cls:'bad',text:'Check sync'};
+  return{cls:'ok',text:'Synced ✓'};
+}
+function renderStatus(){
+  var s=statusInfo(),b=$('status');b.className='pill '+s.cls;b.textContent=s.text;
+}
+function render(){
+  $('ver').textContent=APP_VERSION;
+  renderStatus();
+  var m=$('main');
+  if(!S.who){ // never rebuild the welcome form once it is showing, or a background refresh would erase what is being typed
+    if(!$('su_who')){m.innerHTML=setupHtml();wireSetup();}
+    return;
+  }
+  var mg=merged(),h='';
+  if(S.readErr)h+='<div class="banner '+(S.readErr.reason==='network'?'warn':'bad')+'">'+esc(ghReasonText(S.readErr))+'</div>';
+  if(S.catsMissing)h+='<div class="banner warn">cats.json was not found on the data branch, so placeholder names are shown. Add cats.json to set real names.</div>';
+  else if(S.lastRead&&Date.now()-S.lastRead>15*60000)h+='<div class="banner warn">Showing data from '+esc(ago(new Date(S.lastRead).toISOString()))+'.</div>';
+  if(!GH_CFG.token)h+='<div class="banner warn">No token on this phone yet, so entries are saved here and will not sync. Tap ⚙️ to add it.</div>';
+  if(CONFIG.owner==='thomisrad')h+='<div class="banner bad">This copy is not configured: edit CONFIG.owner at the top of the file.</div>';
+  h+='<h2>Cats</h2><div class="cats">';
+  S.cats.forEach(function(c){
+    var f=lastOf(mg.list,c.id,'feeding'),l=lastOf(mg.list,c.id,'litter'),w=lastOf(mg.list,c.id,'weight');
+    h+='<div class="card"><h3>'+esc(c.name)+'</h3>';
+    h+='<div class="stat"><span>Fed</span><b class="'+(f?sevClass(hoursSince(f.ts),thr(c,'feedAmberH',12),thr(c,'feedRedH',24)):'amber')+'">'+(f?esc(ago(f.ts)):'no record')+'</b></div>';
+    h+='<div class="stat"><span>Litter</span><b class="'+(l?sevClass(hoursSince(l.ts),thr(c,'litterAmberH',24),thr(c,'litterRedH',36)):'amber')+'">'+(l?esc(ago(l.ts)):'no record')+'</b></div>';
+    h+='<div class="stat"><span>Weight</span><b>'+(w?esc(w.kg)+' kg':'—')+'</b></div></div>';
+  });
+  h+='</div><h2>Log something</h2><div class="tiles">';
+  Object.keys(TYPES).forEach(function(k){h+='<button class="tile" type="button" data-type="'+k+'"><i>'+TYPES[k].icon+'</i>'+esc(TYPES[k].label)+'</button>';});
+  h+='</div><h2>Today</h2><div class="card"><ul>';
+  var today=mg.list.filter(function(r){return sameLocalDay(r.ts);}).slice(0,40);
+  if(!today.length)h+='<li class="empty">Nothing logged today yet.</li>';
+  today.forEach(function(r){
+    h+='<li class="rec"><span class="t">'+esc(clock(r.ts))+'</span><span class="b"><b>'+esc(catName(r.cat))+'</b> · '+summary(r)+
+       (r.note?'<br><span class="by">“'+esc(r.note)+'”</span>':'')+'<br><span class="by">'+esc(r.by)+'</span></span>'+
+       (mg.pend[r.id]?'<span class="badge wait">⏳ on this phone</span>':'<span class="badge ok">✓ saved</span>')+'</li>';
+  });
+  h+='</ul></div>';
+  m.innerHTML=h;
+  var tiles=m.querySelectorAll('.tile');
+  for(var i=0;i<tiles.length;i++)tiles[i].onclick=(function(t){return function(){openSheet(t.getAttribute('data-type'));};})(tiles[i]);
+}
+
+// ---------- first run ----------
+function setupHtml(){
+  return '<div class="card" style="margin-top:12px"><h2 style="margin-top:4px">Welcome 🐾</h2>'+
+    '<label class="lbl" for="su_who">Who is logging on this phone?</label>'+
+    '<input type="text" id="su_who" maxlength="40" autocomplete="off" placeholder="e.g. Mario">'+
+    '<label class="lbl" for="su_tok">GitHub token <span style="font-weight:400">(optional now, needed to sync)</span></label>'+
+    '<input type="password" id="su_tok" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…">'+
+    '<div class="hint">Your name is attached to each entry. The token stays on this phone only.</div>'+
+    '<div class="err" id="su_err"></div><div class="row"><button class="btn" id="su_go" type="button">Start</button></div></div>';
+}
+function wireSetup(){
+  $('su_go').onclick=function(){
+    var w=$('su_who').value.trim();
+    if(!w){$('su_err').textContent='Please enter your name.';return;}
+    var t=$('su_tok').value.trim();
+    S.who=w;lsSet(WHO_KEY,w);
+    if(t)tokenSave(t);
+    render();startRefresh();
+  };
+}
+
+// ---------- sheets ----------
+function openVeil(html){
+  $('sheet').innerHTML=html;$('sheet').classList.add('on');$('veil').classList.add('on');
+  $('sheet').scrollTop=0;
+}
+function closeSheet(){$('sheet').classList.remove('on');$('veil').classList.remove('on');$('sheet').innerHTML='';S.sheet=null;}
+function seg(name,opts,def){
+  return '<div class="chips">'+opts.map(function(o){
+    return '<label><input type="radio" name="'+name+'" value="'+esc(o)+'"'+(o===def?' checked':'')+'><span>'+esc(o)+'</span></label>';
+  }).join('')+'</div>';
+}
+function fieldsFor(type){
+  var h='';
+  if(type==='feeding'){
+    h+='<div class="lbl">Food</div>'+seg('food',['wet','dry','treat','other'],'wet');
+    h+='<label class="lbl" for="f_amount">Amount in grams (optional)</label><input type="number" id="f_amount" inputmode="numeric" min="1" max="500" step="1">';
+  }else if(type==='litter'){
+    h+='<div class="lbl">Action</div>'+seg('action',['scooped','full change'],'scooped');
+    h+='<div class="lbl">Observation</div>'+seg('observation',['normal','concern'],'normal');
+  }else if(type==='weight'){
+    h+='<label class="lbl" for="f_kg">Weight in kg</label><input type="number" id="f_kg" inputmode="decimal" min="0.5" max="15" step="0.1" placeholder="4.3">';
+  }else if(type==='medication'){
+    var names={},list=[];S.cats.forEach(function(c){(c.meds||[]).forEach(function(m){var n=typeof m==='string'?m:(m&&m.name);if(n&&!names[n]){names[n]=1;list.push(n);}});});
+    h+='<label class="lbl" for="f_med">Medication</label><input type="text" id="f_med" list="medlist" maxlength="80" autocomplete="off">'+
+       '<datalist id="medlist">'+list.map(function(n){return '<option value="'+esc(n)+'">';}).join('')+'</datalist>';
+    h+='<label class="lbl" for="f_dose">Dose (optional)</label><input type="text" id="f_dose" maxlength="100" autocomplete="off" placeholder="e.g. ½ tablet">';
+  }else if(type==='vet'){
+    h+='<label class="lbl" for="f_reason">Reason</label><input type="text" id="f_reason" maxlength="120" autocomplete="off" placeholder="e.g. annual checkup">';
+    h+='<label class="lbl" for="f_vet">Vet (optional)</label><input type="text" id="f_vet" maxlength="80" autocomplete="off">';
+    h+='<label class="lbl" for="f_next">Next due date (optional)</label><input type="date" id="f_next">';
+  }else if(type==='behavior'){
+    h+='<div class="lbl">Kind</div>'+seg('kind',['play','behavior','health concern'],'play');
+  }
+  return h;
+}
+function openSheet(type){
+  var T=TYPES[type];if(!T)return;
+  S.sheet={type:type,ids:{},busy:false,sel:{}};
+  if(T.all)S.cats.forEach(function(c){S.sheet.sel[c.id]=true;});
+  var h='<div class="grab"></div><h2>'+T.icon+' '+esc(T.label)+'</h2>';
+  h+='<div class="lbl">Which cat'+(T.multi?' (tap one or both)':'')+'</div><div class="chips" id="catchips">'+
+     S.cats.map(function(c){return '<button type="button" data-cat="'+esc(c.id)+'" class="'+(S.sheet.sel[c.id]?'on':'')+'">'+esc(c.name)+'</button>';}).join('')+'</div>';
+  h+=fieldsFor(type);
+  h+='<label class="lbl" for="f_time">When</label><input type="datetime-local" id="f_time" value="'+esc(localInputValue(new Date()))+'">';
+  h+='<label class="lbl" for="f_note">Note'+(type==='behavior'?' (required)':' (optional)')+'</label><textarea id="f_note" rows="2" maxlength="1000"></textarea>';
+  h+='<div class="err" id="err" role="alert"></div>';
+  h+='<div class="row"><button type="button" class="btn ghost" id="cancel">Cancel</button><button type="button" class="btn" id="save">Save</button></div>';
+  openVeil(h);
+  var chips=$('catchips').querySelectorAll('button');
+  for(var i=0;i<chips.length;i++)chips[i].onclick=(function(b){return function(){
+    var id=b.getAttribute('data-cat'),was=!!S.sheet.sel[id];
+    if(T.multi){if(was)delete S.sheet.sel[id];else S.sheet.sel[id]=true;} // tap toggles
+    else{S.sheet.sel={};S.sheet.sel[id]=true;}                           // single-cat types: tap selects
+    var all=$('catchips').querySelectorAll('button');
+    for(var j=0;j<all.length;j++)all[j].className=S.sheet.sel[all[j].getAttribute('data-cat')]?'on':'';
+  };})(chips[i]);
+  $('cancel').onclick=closeSheet;
+  $('save').onclick=saveSheet;
+}
+function val(id){var e=$(id);return e?e.value.trim():'';}
+function radio(name){var e=document.querySelector('#sheet input[name="'+name+'"]:checked');return e?e.value:'';}
+
+function buildRecords(){
+  var sh=S.sheet,type=sh.type,cats=Object.keys(sh.sel).filter(function(k){return sh.sel[k];});
+  var base,t=val('f_time'),ts=null;
+  if(t){var d=new Date(t);if(!isNaN(d.getTime()))ts=d.toISOString();}
+  var errs=[];
+  if(!cats.length)errs.push('Pick a cat.');
+  if(!ts)errs.push('Check the time.');
+  else if(Date.parse(ts)>Date.now()+10*60000)errs.push('That time is in the future.');
+  else if(Date.now()-Date.parse(ts)>60*86400000)errs.push('More than 60 days ago: ask whoever manages the dashboard to add it.');
+  var extra={};
+  switch(type){
+    case 'feeding':extra.food=radio('food');var a=val('f_amount');if(a!=='')extra.amount=Number(a);break;
+    case 'litter':extra.action=radio('action');extra.observation=radio('observation');break;
+    case 'weight':var kg=val('f_kg');extra.kg=kg===''?NaN:Number(kg);break;
+    case 'medication':extra.med=val('f_med');if(val('f_dose'))extra.dose=val('f_dose');break;
+    case 'vet':extra.reason=val('f_reason');if(val('f_vet'))extra.vet=val('f_vet');if(val('f_next'))extra.nextDue=val('f_next');break;
+    case 'behavior':extra.kind=radio('kind');break;
+  }
+  var recs=cats.map(function(c){
+    if(!sh.ids[c])sh.ids[c]=newId(); // reused on a re-tap, so a double tap cannot create two records
+    var r={id:sh.ids[c],type:type,cat:c,ts:ts||'',by:S.who};
+    for(var k in extra)r[k]=extra[k];
+    if(val('f_note'))r.note=val('f_note');
+    return r;
+  });
+  var ids=S.cats.map(function(c){return c.id;});
+  recs.forEach(function(r){validateRecord(r,ids).forEach(function(f){
+    if(f==='cat'||f==='ts')return; // already reported above in plain words
+    var m='Check: '+(FIELD_LABEL[f]||f);if(errs.indexOf(m)<0)errs.push(m);
+  });});
+  return{recs:recs,errs:errs};
+}
+function toast(msg,warn,ms){
+  var t=$('toast');t.textContent=msg;t.className='on'+(warn?' warn':'');
+  clearTimeout(toast._t);toast._t=setTimeout(function(){t.className='';},ms||5000);
+}
+async function saveSheet(){
+  var sh=S.sheet;if(!sh||sh.busy)return;
+  var b=buildRecords();
+  if(b.errs.length){$('err').textContent=b.errs.join(' ');return;}
+  sh.busy=true;$('save').disabled=true;$('save').textContent='Saving…';
+  var res;
+  try{res=await submitEntries(b.recs);}
+  catch(e){res={persisted:false,synced:false,result:{reason:'unknown'}};}
+  closeSheet();render();
+  var n=b.recs.length>1?'Saved '+b.recs.length+' entries':'Saved';
+  if(res.synced)toast(n+' ✓');
+  else{
+    var why=res.result&&res.result.reason,msg;
+    if(why==='notoken')msg='Add your token in ⚙️ to sync.';
+    else if(why==='auth')msg='Token rejected: replace it in ⚙️.';
+    else if(why==='network')msg='It will sync when there is signal.';
+    else msg=ghReasonText(res.result);
+    toast((res.persisted?n+' on this phone. ':'⚠ NOT saved on this phone (storage blocked). Keep this page open. ')+msg,true,8000);
+  }
+  renderStatus();
+  if(res.synced)startRefresh();
+}
+
+// ---------- settings ----------
+function openSettings(){
+  var n=outboxLoad().length;
+  var h='<div class="grab"></div><h2>⚙️ Settings</h2>'+
+    '<label class="lbl" for="s_who">Your name</label><input type="text" id="s_who" maxlength="40" autocomplete="off" value="'+esc(S.who)+'">'+
+    '<label class="lbl" for="s_tok">GitHub token</label><input type="password" id="s_tok" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="'+(GH_CFG.token?'Token is set (paste a new one to replace)':'github_pat_…')+'">'+
+    '<div class="hint">'+(n?'<b>'+n+' unsynced entr'+(n===1?'y':'ies')+'</b> on this phone. They stay here until sent.':'Nothing waiting to sync.')+' Changing or clearing the token never removes saved entries.</div>'+
+    '<div class="hint">This app cannot delete history. Deleting is done from the dashboard.</div>'+
+    '<div class="hint">'+esc(APP_VERSION)+' · data: '+esc(CONFIG.owner)+'/'+esc(CONFIG.repo)+' ('+esc(CONFIG.branch)+')</div>'+
+    '<div class="err" id="s_err"></div>'+
+    '<div class="row"><button type="button" class="btn ghost" id="s_close">Close</button><button type="button" class="btn" id="s_save">Save</button></div>'+
+    '<div class="row"><button type="button" class="btn ghost" id="s_sync">Sync now</button>'+(GH_CFG.token?'<button type="button" class="btn ghost" id="s_clear">Clear token</button>':'')+'</div>';
+  openVeil(h);
+  $('s_close').onclick=closeSheet;
+  $('s_save').onclick=function(){
+    var w=$('s_who').value.trim();if(!w){$('s_err').textContent='Name cannot be empty.';return;}
+    S.who=w;lsSet(WHO_KEY,w);
+    var t=$('s_tok').value.trim();if(t)tokenSave(t);
+    closeSheet();render();
+    if(t){_branchOk=false;}
+    syncOutbox().then(startRefresh);
+  };
+  $('s_sync').onclick=function(){closeSheet();toast('Syncing…');syncOutbox().then(function(r){
+    renderStatus();
+    toast(r&&r.ok?(r.pending?r.pending+' still waiting':'All synced ✓'):ghReasonText(r),!(r&&r.ok&&!r.pending));
+    startRefresh();});};
+  var c=$('s_clear');if(c)c.onclick=function(){
+    if(confirm('Clear the token from this phone? Unsynced entries stay here until you add a token again.')){tokenClear();closeSheet();render();}
+  };
+}
+
+// ---------- data refresh ----------
+async function startRefresh(){
+  if(S.reading||!GH_CFG.token)return renderStatus();
+  S.reading=true;
+  try{
+    var out=await Promise.all([ghFetchRemote(CF.catsPath),loadRecords(2)]);
+    var c=out[0],r=out[1];
+    S.catsMissing=!!(c.ok&&c.missing);
+    if(c.ok&&c.list.length){S.cats=c.list;lsSet(CATS_KEY,JSON.stringify(c.list));}
+    if(r.ok){S.records=r.list;S.lastRead=Date.now();cacheSave(r.list);}
+    S.readErr=r.ok?(c.ok?null:c):r;
+  }catch(e){S.readErr={reason:'network'};}
+  S.reading=false;render();
+}
+
+// ---------- boot ----------
+(function boot(){
+  $('veil').onclick=function(){if(S.sheet&&S.sheet.busy)return;closeSheet();};
+  $('gear').onclick=openSettings;
+  $('status').onclick=function(){openSettings();};
+  S.who=lsGet(WHO_KEY)||'';
+  try{var c=JSON.parse(lsGet(CATS_KEY)||'null');S.cats=(Array.isArray(c)&&c.length)?c:DEFAULT_CATS;}catch(e){S.cats=DEFAULT_CATS;}
+  S.records=cacheLoad();
+  render();
+  installRetryTriggers(window,document,function(){return syncOutbox().then(startRefresh);});
+  window.addEventListener('online',renderStatus);window.addEventListener('offline',renderStatus);
+  document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&Date.now()-S.lastRead>60000)startRefresh();});
+  if(outboxLoad().length)syncOutbox().then(startRefresh);else startRefresh();
+  setInterval(function(){render();},60000); // keep "3 h ago" fresh (does not touch an open sheet)
+})();
+</script>
+</body>
+</html>
